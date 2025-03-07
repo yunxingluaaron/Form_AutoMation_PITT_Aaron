@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import os
 import io
@@ -401,7 +401,7 @@ def generate_forms(data):
         if not os.path.exists(ibhs_template_path) or not os.path.exists(cc_template_path):
             logger.warning("Template files not found, using direct PDF generation")
             
-            # Use the original PDF generation methods
+            # Use the updated PDF generation methods
             generate_ibhs_pdf(ibhs_filepath, form_data.get('ibhs', {}))
             generate_community_care_pdf(cc_filepath, form_data.get('communityCare', {}))
         else:
@@ -429,12 +429,13 @@ def generate_forms(data):
         
         logger.info(f"Generated form files: {ibhs_filename}, {cc_filename}")
         
+        # Use simplified URLs without the /api prefix to avoid duplication in frontend
         return {
             "status": "success",
             "message": "Forms generated successfully",
             "downloadLinks": {
-                "ibhs": f"/api/download/{ibhs_filename}",
-                "communityCare": f"/api/download/{cc_filename}"
+                "ibhs": f"/download/{ibhs_filename}",  # Removed the /api prefix
+                "communityCare": f"/download/{cc_filename}"  # Removed the /api prefix
             }
         }
     
@@ -741,10 +742,16 @@ def generate_ibhs_pdf(filepath, form_data):
     c.setFont("Helvetica", 10)
     
     diagnoses = form_data.get('current_diagnoses', 'None specified')
-    # Handle multi-line text
-    for line in diagnoses.split('\n'):
-        c.drawString(50, y_position, line)
-        y_position -= 15
+    # Handle either string or list for diagnoses
+    if isinstance(diagnoses, list):
+        for diagnosis in diagnoses:
+            c.drawString(50, y_position, str(diagnosis))
+            y_position -= 15
+    else:
+        # If it's a string, split by newlines
+        for line in str(diagnoses).split('\n'):
+            c.drawString(50, y_position, line)
+            y_position -= 15
     y_position -= 15
     
     # Goals
@@ -753,10 +760,19 @@ def generate_ibhs_pdf(filepath, form_data):
     y_position -= 20
     c.setFont("Helvetica", 10)
     
-    goals = form_data.get('measurable_goals', 'None specified')
-    for line in goals.split('\n'):
-        c.drawString(50, y_position, line)
-        y_position -= 15
+    # Get goals from either measurable_goals or treatment_goals field
+    goals = form_data.get('measurable_goals', form_data.get('treatment_goals', 'None specified'))
+    
+    # Handle either string or list for goals
+    if isinstance(goals, list):
+        for goal in goals:
+            c.drawString(50, y_position, str(goal))
+            y_position -= 15
+    else:
+        # If it's a string, split by newlines
+        for line in str(goals).split('\n'):
+            c.drawString(50, y_position, line)
+            y_position -= 15
     
     # Save the PDF
     c.save()
@@ -777,9 +793,9 @@ def generate_community_care_pdf(filepath, form_data):
     y_position -= 20
     
     c.setFont("Helvetica", 10)
-    c.drawString(50, y_position, f"Name: {form_data.get('recipient_name', 'N/A')}")
+    c.drawString(50, y_position, f"Name: {form_data.get('recipient_name', form_data.get('member_name', 'N/A'))}")
     y_position -= 15
-    c.drawString(50, y_position, f"Date of Birth: {form_data.get('dob', 'N/A')}")
+    c.drawString(50, y_position, f"Date of Birth: {form_data.get('dob', form_data.get('member_dob', 'N/A'))}")
     y_position -= 15
     c.drawString(50, y_position, f"Age: {form_data.get('age', 'N/A')}")
     y_position -= 30
@@ -790,10 +806,27 @@ def generate_community_care_pdf(filepath, form_data):
     y_position -= 20
     c.setFont("Helvetica", 10)
     
-    diagnoses = form_data.get('diagnoses', 'None specified')
-    for line in diagnoses.split('\n'):
-        c.drawString(50, y_position, line)
-        y_position -= 15
+    # Get diagnoses from either field
+    diagnoses = form_data.get('diagnoses', form_data.get('diagnosis', 'None specified'))
+    
+    # Handle different data types for diagnoses
+    if isinstance(diagnoses, list):
+        for diagnosis in diagnoses:
+            if isinstance(diagnosis, dict):
+                # Handle dict format with name and code
+                name = diagnosis.get('name', '')
+                code = diagnosis.get('code', '')
+                text = f"{name} ({code})" if code else name
+                c.drawString(50, y_position, text)
+            else:
+                # Handle plain text or other format
+                c.drawString(50, y_position, str(diagnosis))
+            y_position -= 15
+    else:
+        # If it's a string, split by newlines
+        for line in str(diagnoses).split('\n'):
+            c.drawString(50, y_position, line)
+            y_position -= 15
     y_position -= 15
     
     # Clinical Presentation
@@ -802,10 +835,57 @@ def generate_community_care_pdf(filepath, form_data):
     y_position -= 20
     c.setFont("Helvetica", 10)
     
-    symptoms = form_data.get('symptoms', 'None specified')
-    for line in symptoms.split('\n'):
-        c.drawString(50, y_position, line)
-        y_position -= 15
+    symptoms = form_data.get('symptoms', form_data.get('clinical_summary', 'None specified'))
+    
+    # Handle different data types for symptoms
+    if isinstance(symptoms, list):
+        for symptom in symptoms:
+            c.drawString(50, y_position, str(symptom))
+            y_position -= 15
+    else:
+        # If it's a string, split by newlines
+        for line in str(symptoms).split('\n'):
+            c.drawString(50, y_position, line)
+            y_position -= 15
+    
+    y_position -= 15
+    
+    # Treatment Recommendations
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y_position, "Treatment Recommendations")
+    y_position -= 20
+    c.setFont("Helvetica", 10)
+    
+    recommendations = form_data.get('treatment_recommendations', form_data.get('treatment_plan', 'None specified'))
+    
+    # Handle different data types for recommendations
+    if isinstance(recommendations, list):
+        for recommendation in recommendations:
+            c.drawString(50, y_position, str(recommendation))
+            y_position -= 15
+    else:
+        # If it's a string, split by newlines
+        for line in str(recommendations).split('\n'):
+            # Check if the line is too long
+            if len(line) > 90:  # Approximate character limit per line
+                words = line.split()
+                current_line = ""
+                
+                for word in words:
+                    if len(current_line) + len(word) + 1 <= 90:
+                        current_line += " " + word if current_line else word
+                    else:
+                        c.drawString(50, y_position, current_line)
+                        y_position -= 15
+                        current_line = word
+                
+                # Draw the last line if there's any content left
+                if current_line:
+                    c.drawString(50, y_position, current_line)
+                    y_position -= 15
+            else:
+                c.drawString(50, y_position, line)
+                y_position -= 15
     
     # Save the PDF
     c.save()
@@ -864,39 +944,48 @@ def test_template():
         }), 500
 
 
-@app.route('/api/download/<filename>', methods=['GET'])
+# Add this route to your Flask app for handling file downloads
+# Note the updated route without the /api prefix to match the generate_forms response
+
+@app.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
     """
-    Endpoint to download generated form files
+    Endpoint to download generated PDF files
     """
     logger.info(f"Download request for file: {filename}")
     
+    # Validate filename to prevent directory traversal
+    if '..' in filename or filename.startswith('/'):
+        logger.warning(f"Invalid filename requested: {filename}")
+        return jsonify({"error": "Invalid filename"}), 400
+    
+    # Construct the file path
+    file_path = os.path.join(app.config['DOWNLOAD_FOLDER'], filename)
+    logger.info(f"Looking for file at path: {file_path}")
+    
+    # Check if file exists
+    file_exists = os.path.exists(file_path)
+    logger.info(f"File exists: {file_exists}")
+    
+    if not file_exists:
+        logger.error(f"Requested file not found: {file_path}")
+        return jsonify({"error": "File not found"}), 404
+    
     try:
-        # Security check to prevent directory traversal
-        secure_name = os.path.basename(filename)
-        
-        # Check if file exists
-        file_path = os.path.join(app.config['DOWNLOAD_FOLDER'], secure_name)
-        if not os.path.exists(file_path):
-            logger.error(f"Requested file not found: {file_path}")
-            return jsonify({"error": "File not found"}), 404
-            
+        # Return the file as a downloadable attachment
         logger.info(f"Sending file: {file_path}")
-        # Set mimetype based on file extension
-        mimetype = 'application/pdf' if filename.endswith('.pdf') else None
-        
-        return send_from_directory(
-            app.config['DOWNLOAD_FOLDER'], 
-            secure_name,
-            mimetype=mimetype,
-            as_attachment=True
+        return send_file(
+            file_path, 
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
         )
-        
     except Exception as e:
-        logger.error(f"Error during file download: {str(e)}")
+        logger.error(f"Error sending file: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({"error": f"Download error: {str(e)}"}), 500
-
+    
+    
 if __name__ == '__main__':
     logger.info("Starting Flask application...")
     app.run(debug=True)

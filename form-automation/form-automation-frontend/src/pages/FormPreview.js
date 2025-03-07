@@ -14,11 +14,13 @@ import {
 
 import { useFormContext } from '../context/FormContext';
 import apiService from '../services/api';
+import TextExtractionPreview from '../components/TextExtractionPreview';
 
 const FormPreview = () => {
   const navigate = useNavigate();
   const {
     formData,
+    patientData,
     generationStatus,
     setDownloadStatus,
     startFormGeneration,
@@ -26,6 +28,7 @@ const FormPreview = () => {
   } = useFormContext();
   
   const [activeTab, setActiveTab] = useState('ibhs');
+  const [showExtractedText, setShowExtractedText] = useState(false);
   
   // Generate forms if not already generated
   const handleGenerateForms = async () => {
@@ -143,6 +146,42 @@ const FormPreview = () => {
         </div>
       </div>
       
+      {/* Patient Summary */}
+      {patientData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h2 className="text-lg font-semibold text-blue-800 mb-2">Patient Summary</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Name</p>
+              <p className="font-medium">{patientData.name || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Date of Birth</p>
+              <p className="font-medium">{patientData.dob || 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Age</p>
+              <p className="font-medium">{patientData.age || 'Not specified'}</p>
+            </div>
+          </div>
+          
+          {/* Toggle button for extracted text */}
+          <div className="mt-2">
+            <button
+              onClick={() => setShowExtractedText(!showExtractedText)}
+              className="text-blue-600 hover:text-blue-800 text-sm underline"
+            >
+              {showExtractedText ? 'Hide extracted text' : 'Show extracted text'}
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Extracted Text Preview (conditionally rendered) */}
+      {showExtractedText && patientData && patientData.extractedText && (
+        <TextExtractionPreview extractedText={patientData.extractedText} />
+      )}
+      
       {/* Form Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="flex space-x-8">
@@ -235,15 +274,15 @@ const FormPreview = () => {
                   <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Child's Name</p>
-                      <p>{formData.ibhs.child_name || 'N/A'}</p>
+                      <p>{formData.ibhs.child_name || formData.ibhs.recipient_name || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Date of Birth</p>
-                      <p>{formData.ibhs.dob || 'N/A'}</p>
+                      <p>{formData.ibhs.dob || formData.ibhs.recipient_dob || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Parent/Guardian</p>
-                      <p>{formData.ibhs.parent_guardian || 'N/A'}</p>
+                      <p>{formData.ibhs.parent_guardian || formData.ibhs.guardian_name || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -251,25 +290,28 @@ const FormPreview = () => {
                 <div>
                   <h4 className="font-medium text-gray-800">Current Behavioral Health Diagnoses</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.ibhs.current_diagnoses || 'None specified'}</p>
+                    <p className="whitespace-pre-line">
+                      {formData.ibhs.current_diagnoses || 
+                      (formData.ibhs.diagnosis_primary ? `${formData.ibhs.diagnosis_primary} ${formData.ibhs.diagnosis_code_primary ? `(${formData.ibhs.diagnosis_code_primary})` : ''}` : 'None specified')}
+                    </p>
                   </div>
                 </div>
                 
                 <div>
                   <h4 className="font-medium text-gray-800">Measurable Goals and Objectives</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.ibhs.measurable_goals || 'None specified'}</p>
+                    <p className="whitespace-pre-line">{formData.ibhs.measurable_goals || formData.ibhs.treatment_goals || 'None specified'}</p>
                   </div>
                 </div>
                 
                 <div>
                   <h4 className="font-medium text-gray-800">Clinical Information</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.ibhs.clinical_information || 'None specified'}</p>
+                    <p className="whitespace-pre-line">{formData.ibhs.clinical_information || formData.ibhs.presenting_problems || 'None specified'}</p>
                   </div>
                 </div>
                 
-                {formData.ibhs.treatment_history && (
+                {(formData.ibhs.treatment_history) && (
                   <div>
                     <h4 className="font-medium text-gray-800">Treatment History</h4>
                     <div className="mt-2">
@@ -346,15 +388,15 @@ const FormPreview = () => {
                   <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Name</p>
-                      <p>{formData.communityCare.recipient_name || 'N/A'}</p>
+                      <p>{formData.communityCare.recipient_name || formData.communityCare.member_name || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Date of Birth</p>
-                      <p>{formData.communityCare.dob || 'N/A'}</p>
+                      <p>{formData.communityCare.dob || formData.communityCare.member_dob || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Age</p>
-                      <p>{formData.communityCare.age || 'N/A'}</p>
+                      <p>{formData.communityCare.age || patientData.age || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -362,21 +404,30 @@ const FormPreview = () => {
                 <div>
                   <h4 className="font-medium text-gray-800">Current Diagnoses</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.communityCare.diagnoses || 'None specified'}</p>
+                    <p className="whitespace-pre-line">
+                      {formData.communityCare.diagnoses || 
+                       (formData.communityCare.diagnosis && Array.isArray(formData.communityCare.diagnosis) ? 
+                        formData.communityCare.diagnosis.map(d => {
+                          if (typeof d === 'object') {
+                            return `${d.name || ''} ${d.code ? `(${d.code})` : ''}`;
+                          }
+                          return d;
+                        }).join('\n') : 'None specified')}
+                    </p>
                   </div>
                 </div>
                 
                 <div>
                   <h4 className="font-medium text-gray-800">Clinical Presentation/Symptoms</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.communityCare.symptoms || 'None specified'}</p>
+                    <p className="whitespace-pre-line">{formData.communityCare.symptoms || formData.communityCare.clinical_summary || 'None specified'}</p>
                   </div>
                 </div>
                 
                 <div>
                   <h4 className="font-medium text-gray-800">Treatment Recommendations</h4>
                   <div className="mt-2">
-                    <p className="whitespace-pre-line">{formData.communityCare.treatment_recommendations || 'None specified'}</p>
+                    <p className="whitespace-pre-line">{formData.communityCare.treatment_recommendations || formData.communityCare.treatment_plan || 'None specified'}</p>
                   </div>
                 </div>
                 

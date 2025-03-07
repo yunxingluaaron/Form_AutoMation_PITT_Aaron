@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 // Create axios instance with defaults
 const api = axios.create({
@@ -20,10 +20,12 @@ const apiService = {
    */
   uploadFiles: async (files, onProgress) => {
     try {
+      console.log(`Uploading file to ${API_BASE_URL}/upload`);
+      
       // Create form data
       const formData = new FormData();
       
-      // Use the first file (simplifying to one file for now based on the backend)
+      // Use the first file (backend currently processes only one file)
       if (files.length > 0) {
         formData.append('file', files[0]);
       }
@@ -44,17 +46,16 @@ const apiService = {
       });
       
       if (response.data.status === 'success') {
-        // Restructure data based on your backend response
+        // Extract patientData and formData from the response
         return {
-          // Original patient data from backend
-          patientData: response.data.patientData || {},
-          // Form data from backend
+          patientData: {
+            ...response.data.patientData,
+            extractedText: response.data.extractedText // Include extracted OCR text
+          },
           formData: response.data.formData || {
             ibhs: {},
             communityCare: {}
-          },
-          // Keep original response for debugging
-          originalResponse: response.data
+          }
         };
       } else {
         throw new Error(response.data.error || 'Processing failed');
@@ -107,10 +108,22 @@ const apiService = {
    */
   downloadForm: async (url) => {
     try {
-      // Check if URL is relative or absolute
-      const downloadUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      // If the URL already starts with /api, don't prepend API_BASE_URL
+      // Instead, extract the path portion and append to the base URL
+      let downloadUrl;
       
-      // Open the URL in a new tab for download
+      if (url.startsWith('/api/')) {
+        // Extract the path after /api/ and append to base URL
+        const path = url.replace('/api/', '');
+        downloadUrl = `${API_BASE_URL.replace(/\/api\/?$/, '')}/${path}`;
+      } else {
+        // Regular case - just prepend base URL if needed
+        downloadUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      }
+      
+      console.log(`Downloading form from: ${downloadUrl}`);
+      
+      // For direct download, use window.open
       window.open(downloadUrl, '_blank');
       
       return true;

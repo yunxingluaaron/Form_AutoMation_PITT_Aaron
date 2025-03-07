@@ -1,25 +1,162 @@
 /* src/index.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* CSS Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f9fafb;
+  padding: 0;
+  background-color: #f5f7fb;
+  color: #1f2937;
 }
 
+/* Main content container */
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* Main content */
 .main-content {
   flex: 1;
+  padding: 2rem 0;
+}
+
+/* Header styles */
+.header {
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   padding: 1rem 0;
 }
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.logo-icon {
+  margin-right: 0.5rem;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-item {
+  margin-left: 1.5rem;
+}
+
+.nav-link {
+  color: #4b5563;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #2563eb;
+}
+
+.nav-link-active {
+  color: #2563eb;
+}
+
+/* Footer styles */
+.footer {
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 2rem 0;
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.footer-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-link {
+  color: #4b5563;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.15s ease-in-out;
+}
+
+.footer-link:hover {
+  color: #2563eb;
+}
+
+/* Toast Notification Overrides */
+.Toastify__toast {
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.Toastify__toast--success {
+  background-color: #10b981;
+}
+
+.Toastify__toast--error {
+  background-color: #ef4444;
+}
+
+.Toastify__toast--warning {
+  background-color: #f59e0b;
+}
+
+.Toastify__toast--info {
+  background-color: #3b82f6;
+}
+
+.Toastify__toast-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+}
+
+/* Import your component styles */
+@import './styles/main.css';

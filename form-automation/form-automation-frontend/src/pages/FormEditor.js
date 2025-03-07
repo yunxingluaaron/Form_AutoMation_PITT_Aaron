@@ -41,10 +41,15 @@ const FormEditor = () => {
   // Initialize edited form data when form data is available
   useEffect(() => {
     if (formData) {
-      console.log("Setting edited form data:", formData);
+      // Convert from backend field names to frontend field names if needed
+      console.log("Setting edited form data from backend:", formData);
+      
+      const mappedIBHSData = mapBackendToFrontendFields(formData.ibhs, 'ibhs');
+      const mappedCCData = mapBackendToFrontendFields(formData.communityCare, 'communityCare');
+      
       setEditedFormData({
-        ibhs: formData.ibhs || {},
-        communityCare: formData.communityCare || {}
+        ibhs: mappedIBHSData,
+        communityCare: mappedCCData
       });
       
       // Set active form if not already set
@@ -53,6 +58,89 @@ const FormEditor = () => {
       }
     }
   }, [formData, activeForm, setActiveForm]);
+  
+  // Map backend field names to frontend field names if necessary
+  const mapBackendToFrontendFields = (data, formType) => {
+    if (!data) return {};
+    
+    const mappedData = {...data};
+    
+    // Handle field mapping for IBHS form
+    if (formType === 'ibhs') {
+      // Map recipient_name to child_name if needed
+      if (data.recipient_name && !data.child_name) {
+        mappedData.child_name = data.recipient_name;
+      }
+      
+      // Map recipient_dob to dob if needed
+      if (data.recipient_dob && !data.dob) {
+        mappedData.dob = data.recipient_dob;
+      }
+      
+      // Map guardian_name to parent_guardian if needed
+      if (data.guardian_name && !data.parent_guardian) {
+        mappedData.parent_guardian = data.guardian_name;
+      }
+      
+      // Map diagnosis_primary to part of current_diagnoses if needed
+      if (data.diagnosis_primary && !data.current_diagnoses) {
+        const code = data.diagnosis_code_primary ? ` (${data.diagnosis_code_primary})` : '';
+        mappedData.current_diagnoses = `${data.diagnosis_primary}${code}`;
+      }
+      
+      // Map presenting_problems to clinical_information if needed
+      if (data.presenting_problems && !data.clinical_information) {
+        mappedData.clinical_information = data.presenting_problems;
+      }
+      
+      // Map treatment_goals to measurable_goals if needed
+      if (data.treatment_goals && !data.measurable_goals) {
+        mappedData.measurable_goals = data.treatment_goals;
+      }
+    }
+    
+    // Handle field mapping for Community Care form
+    if (formType === 'communityCare') {
+      // Map member_name to recipient_name if needed
+      if (data.member_name && !data.recipient_name) {
+        mappedData.recipient_name = data.member_name;
+      }
+      
+      // Map member_dob to dob if needed
+      if (data.member_dob && !data.dob) {
+        mappedData.dob = data.member_dob;
+      }
+      
+      // Map caregiver_name to guardian_name if needed
+      if (data.caregiver_name && !data.guardian_name) {
+        mappedData.guardian_name = data.caregiver_name;
+      }
+      
+      // Format diagnoses array to string if needed
+      if (data.diagnosis && Array.isArray(data.diagnosis) && !data.diagnoses) {
+        mappedData.diagnoses = data.diagnosis.map(d => {
+          if (typeof d === 'object') {
+            const name = d.name || '';
+            const code = d.code ? ` (${d.code})` : '';
+            return `${name}${code}`;
+          }
+          return d;
+        }).join('\n');
+      }
+      
+      // Map clinical_summary to symptoms if needed
+      if (data.clinical_summary && !data.symptoms) {
+        mappedData.symptoms = data.clinical_summary;
+      }
+      
+      // Map treatment_plan to treatment_recommendations if needed
+      if (data.treatment_plan && !data.treatment_recommendations) {
+        mappedData.treatment_recommendations = data.treatment_plan;
+      }
+    }
+    
+    return mappedData;
+  };
   
   // Handle tab change
   const handleTabChange = (formType) => {
