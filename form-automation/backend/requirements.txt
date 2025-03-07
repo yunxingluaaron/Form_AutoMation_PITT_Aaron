@@ -1,0 +1,18 @@
+# API and Web Framework
+flask==2.3.3
+flask-cors==4.0.0
+werkzeug==2.3.7
+
+# PDF and Document Processing
+fpdf==1.7.2
+python-docx==0.8.11
+pdfplumber==0.10.2
+pypdf2==3.0.1
+
+# OCR and NLP
+mistralai==0.0.10  # Mistral AI Client
+pytesseract==0.3.10  # Optional fallback OCR
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0

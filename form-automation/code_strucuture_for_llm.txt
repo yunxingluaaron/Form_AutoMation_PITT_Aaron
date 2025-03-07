@@ -1,0 +1,11 @@
+Form Automation System
+├── Backend (Python/Flask)
+│   ├── app.py - Main server entry point
+│   ├── data_extraction.py - OCR processing with Mistral
+│   ├── form_mapping.py - Maps data to form fields
+│   └── form_generator.py - Generates PDF forms
+├── Frontend (React)
+│   ├── src/App.js - Main component with routing
+│   ├── src/context/FormContext.js - State management
+│   ├── src/components/* - UI components
+│   └── src/pages/* - Main application screens
