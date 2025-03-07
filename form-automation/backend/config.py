@@ -13,7 +13,8 @@ class Config:
     FORM_DATA_FOLDER = './form_data'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max upload
     ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
-    MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY')
+    mistral_api_key = os.environ.get('MISTRAL_API_KEY')
+    openai_api_key = os.environ.get('OPENAI_API_KEY')
     DEBUG = False
     TESTING = False
 

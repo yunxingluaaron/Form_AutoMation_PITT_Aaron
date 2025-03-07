@@ -152,6 +152,7 @@ Document text:
         messages=[{"role": "user", "content": prompt}]
     )
     
+    print(f"starting to use LLM to extract the data")
     # Parse the response
     try:
         # Try to extract JSON from the response
