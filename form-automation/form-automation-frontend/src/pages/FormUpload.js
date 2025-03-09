@@ -1,5 +1,5 @@
 // src/pages/FormUpload.js
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
@@ -14,15 +14,47 @@ const FormUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
   
+  // Get the entire context object for debugging
+  const contextObject = useFormContext();
+  
+  // Use a ref to store the context methods for later access in timeouts
+  const contextRef = useRef(contextObject);
+  
+  // Update ref whenever context changes
+  useEffect(() => {
+    contextRef.current = contextObject;
+  }, [contextObject]);
+  
+  // Add debug logging on component mount
+  useEffect(() => {
+  
+    // Try to call setMeasurableGoals with an empty array to test if it works
+    try {
+      if (typeof contextObject.setMeasurableGoals === 'function') {
+        console.log('Test calling setMeasurableGoals with empty array');
+        contextObject.setMeasurableGoals([]);
+        console.log('setMeasurableGoals call successful');
+      } else {
+        console.error('setMeasurableGoals is not a function at component mount');
+      }
+    } catch (err) {
+      console.error('Error testing setMeasurableGoals:', err);
+    }
+  }, [contextObject]);
+  
+  // Destructure context values (for regular usage)
   const {
     uploadedFiles,
     setUploadedFiles,
     setPatientData,
     setFormData,
+    setMeasurableGoals,
     startProcessing,
     updateProcessingProgress,
     completeProcessing
-  } = useFormContext();
+  } = contextObject;
+  
+  // Add debug logging whenever setMeasurableGoals changes
   
   // Handle file drop
   const onDrop = useCallback((acceptedFiles) => {
@@ -79,12 +111,12 @@ const FormUpload = () => {
     URL.revokeObjectURL(fileToRemove.preview);
   };
   
-  // Handle file upload and processing
   const handleUpload = async () => {
     if (uploadedFiles.length === 0) {
       toast.error('Please add a file to upload');
       return;
     }
+    
     
     try {
       setIsUploading(true);
@@ -119,38 +151,109 @@ const FormUpload = () => {
         // since the upload is just the first part of the process
         onProgress(Math.min(Math.round(progress * 0.6), 60));
       });
+
+      // Add detailed logging to help diagnose issues
+      console.log("API Response:", response);
+      console.log("Response structure:", Object.keys(response));
+      console.log("Measurable goals from API:", response.measurableGoals);
       
       // After upload is complete, show progress for OCR and LLM steps
       onProgress(70); // OCR processing
-      
+
+    
       // Simulate progress updates for the remaining steps
       setTimeout(() => {
+
         onProgress(85); // ChatGPT analysis
         
+        
         setTimeout(() => {
+
           onProgress(95); // Finalizing
+        
           
           setTimeout(() => {
+
             // Complete the process
             onProgress(100);
             
-            // Update context with the extracted and mapped data
-            setPatientData(response.patientData);
-            setFormData({
-              ibhs: response.formData.ibhs || {},
-              communityCare: response.formData.communityCare || {}
-            });
+            try {
+              setPatientData(response.patientData);
+
+            } catch (err) {
+
+            }
+
+            try {
+              setFormData({
+                ibhs: response.formData?.ibhs || {},
+                communityCare: response.formData?.communityCare || {}
+              });
+            } catch (err) {
+            }
+
+            // Set measurable goals if available in the response
+            const goals = response.measurableGoals || [];
+
+
+
+            if (typeof contextRef.current.setMeasurableGoals === 'function') {
+              contextRef.current.setMeasurableGoals(goals);
+              console.log('Successfully set measurable goals via context');
+            } else {
+              console.log('setMeasurableGoals not available, using sessionStorage');
+              // Store in sessionStorage as a fallback
+              sessionStorage.setItem('measurableGoals', JSON.stringify(goals));
+            }
+
             
+            // Try multiple approaches to set the goals
+            console.log('Attempting to set measurable goals...');
+            
+            try {
+              // Approach 1: Try using the destructured variable
+              console.log('Approach 1: Using destructured setMeasurableGoals');
+              if (typeof setMeasurableGoals === 'function') {
+                setMeasurableGoals(goals);
+                console.log('Approach 1 succeeded');
+              } else {
+                console.error('Approach 1 failed: setMeasurableGoals is not a function');
+                
+                // Approach 2: Try using the context object directly
+                console.log('Approach 2: Using contextRef.current.setMeasurableGoals');
+                if (typeof contextRef.current.setMeasurableGoals === 'function') {
+                  contextRef.current.setMeasurableGoals(goals);
+                  console.log('Approach 2 succeeded');
+                } else {
+                  console.error('Approach 2 failed: contextRef.current.setMeasurableGoals is not a function');
+                  
+                  // Fallback: Use sessionStorage
+                  console.log('All approaches failed. Using sessionStorage fallback');
+                  sessionStorage.setItem('measurableGoals', JSON.stringify(goals));
+                  console.log('Stored goals in sessionStorage');
+                }
+              }
+            } catch (err) {
+              console.error('Error setting measurable goals:', err);
+              console.log('Using sessionStorage as fallback due to error');
+              sessionStorage.setItem('measurableGoals', JSON.stringify(goals));
+            }
+            
+            console.log('Completing processing...');
             completeProcessing();
             toast.success('File processed successfully');
             
             // Navigate to the form editor
-            navigate('/editor');
+            console.log('Navigating to /editor');
+            navigate('/editor', { 
+              state: { measurableGoals: goals } // Pass as navigation state as another fallback
+            });
           }, 500);
         }, 1000);
       }, 1000);
       
     } catch (error) {
+      console.error("Upload error:", error);
       setError(error.message || 'An error occurred during file processing');
       toast.error(error.message || 'An error occurred during file processing');
       completeProcessing();
@@ -167,6 +270,10 @@ const FormUpload = () => {
           Upload a medical record, diagnosis report, or assessment document to automatically
           extract patient information using OCR and ChatGPT analysis.
         </p>
+      </div>
+      
+      {/* Debug Display - Remove in production */}
+      <div className="mb-4 p-2 bg-gray-100 rounded text-xs" style={{display: process.env.NODE_ENV === 'development' ? 'block' : 'none'}}>
       </div>
       
       {/* Error display */}
@@ -187,7 +294,7 @@ const FormUpload = () => {
         }`}
       >
         <input {...getInputProps()} />
-        <FaFileUpload className="mx-auto text-4xl text-gray-400 mb-4" />
+        <FaFileUpload className="mx-auto text-8xl text-gray-400 mb-4" />
         
         {isDragActive ? (
           <p className="text-blue-500">Drop the file here...</p>
@@ -265,10 +372,10 @@ const FormUpload = () => {
         <h3 className="text-xl font-semibold text-gray-800 mb-4">How It Works</h3>
         <div className="text-gray-700 space-y-3">
           <p>1. Upload a medical document containing patient information</p>
-          <p>2. The system uses <strong>Mistral OCR</strong> to extract text from the document</p>
-          <p>3. <strong>ChatGPT</strong> analyzes the text to identify and structure patient data</p>
-          <p>4. Review and edit the extracted information on the next screen</p>
-          <p>5. Generate the completed IBHS and Community Care forms</p>
+          <p>2. The system uses <strong>Mistral OCR</strong> to extract patient info from the document</p>
+          <p>3. <strong>Most Advacned LLM</strong> analyzes these data to identify relevant key info and map to IBHS form</p>
+          <p>4. Review and edit the extracted and mapped information on the next screen</p>
+          <p>5. Generate the completed IBHS forms</p>
         </div>
       </div>
     </div>

@@ -77,20 +77,6 @@ const CommunityCareFormFields = ({ formData, onFieldChange, errors = {} }) => {
             )}
           </div>
           
-          {/* Age */}
-          <div>
-            <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
-              Age
-            </label>
-            <input
-              type="text"
-              id="age"
-              name="age"
-              value={formData.age || ''}
-              onChange={handleChange}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-          </div>
         </div>
       </div>
       
@@ -150,7 +136,7 @@ const CommunityCareFormFields = ({ formData, onFieldChange, errors = {} }) => {
       {/* Treatment Recommendations Section */}
       <div className="border-b border-gray-200 pb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Treatment Recommendations
+          Measurable Goals and Objectives
         </h3>
         
         <div>
@@ -159,7 +145,7 @@ const CommunityCareFormFields = ({ formData, onFieldChange, errors = {} }) => {
             name="treatment_recommendations"
             value={formData.treatment_recommendations || ''}
             onChange={handleChange}
-            rows={6}
+            rows={20}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="Enter treatment recommendations"
           />
@@ -173,16 +159,16 @@ const CommunityCareFormFields = ({ formData, onFieldChange, errors = {} }) => {
       {/* Medical Necessity Section */}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Medical Necessity
+           Suggested Rationales
         </h3>
         
         <div className="relative">
           <textarea
             id="medical_necessity"
             name="medical_necessity"
-            value={formData.medical_necessity || ''}
+            value={formData.additional || ''}
             onChange={handleChange}
-            rows={6}
+            rows={15}
             className={`
               block w-full rounded-md border-gray-300 shadow-sm 
               focus:border-blue-500 focus:ring-blue-500 sm:text-sm

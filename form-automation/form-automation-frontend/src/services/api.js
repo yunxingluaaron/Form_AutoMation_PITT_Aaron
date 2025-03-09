@@ -54,8 +54,9 @@ const apiService = {
           },
           formData: response.data.formData || {
             ibhs: {},
-            communityCare: {}
-          }
+            communityCare: {},
+          },
+          measurableGoals: response.data.measurableGoals || response.data.measurableGoals_results || []
         };
       } else {
         throw new Error(response.data.error || 'Processing failed');

@@ -26,7 +26,7 @@ function App() {
             <div className="header-container">
               <Link to="/" className="logo">
                 <FaFileMedical className="logo-icon" />
-                Form Automation
+                VineAI - IBHS Form Automation Assistant
               </Link>
               <nav>
                 <ul className="nav-menu">
@@ -53,7 +53,7 @@ function App() {
           <footer className="footer">
             <div className="footer-container">
               <p className="footer-text">
-                Form Automation Tool - Powered by Mistral OCR and ChatGPT
+                IBHS Form Automation Tool - Powered by Most Advanced OCR and LLM from UPMC and PITT
               </p>
               <div className="footer-links">
                 <a 
@@ -62,8 +62,7 @@ function App() {
                   rel="noopener noreferrer"
                   className="footer-link"
                 >
-                  <FaGithub style={{ marginRight: '4px' }} />
-                  GitHub
+                  © UPMC & PITT
                 </a>
               </div>
             </div>

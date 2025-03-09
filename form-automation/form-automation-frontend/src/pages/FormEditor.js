@@ -18,12 +18,15 @@ import apiService from '../services/api';
 // Import form components
 import IBHSFormFields from '../components/forms/IBHSFormFields';
 import CommunityCareFormFields from '../components/forms/CommunityCareFormFields';
+import MeasurableGoals from '../components/MeasurableGoals';
+
 
 const FormEditor = () => {
   const navigate = useNavigate();
   const {
     patientData,
     formData,
+    measurableGoals,
     updateFormData,
     activeForm,
     setActiveForm,
@@ -37,6 +40,7 @@ const FormEditor = () => {
     ibhs: {},
     communityCare: {}
   });
+  const [showMeasurableGoals, setShowMeasurableGoals] = useState(false);
   
   // Initialize edited form data when form data is available
   useEffect(() => {
@@ -54,7 +58,7 @@ const FormEditor = () => {
       
       // Set active form if not already set
       if (!activeForm) {
-        setActiveForm('ibhs');
+        setActiveForm('communityCare');
       }
     }
   }, [formData, activeForm, setActiveForm]);
@@ -135,7 +139,22 @@ const FormEditor = () => {
       
       // Map treatment_plan to treatment_recommendations if needed
       if (data.treatment_plan && !data.treatment_recommendations) {
-        mappedData.treatment_recommendations = data.treatment_plan;
+        if (Array.isArray(data.treatment_plan)) {
+          mappedData.treatment_recommendations = data.treatment_plan.map((goal, index) => {
+            return `GOAL ${index + 1}: ${goal.objective || ''}\n` +
+                   `Measurement: ${goal.measurement || ''}\n` +
+                   `Timeframe: ${goal.timeframe || ''}\n`;
+          }).join("\n\n");
+        } else if (typeof data.treatment_plan === 'string') {
+          mappedData.treatment_recommendations = data.treatment_plan;
+        } else {
+          // Fallback for unexpected data types
+          mappedData.treatment_recommendations = JSON.stringify(data.treatment_plan, null, 2);
+        }
+      }
+
+      if (data.rationales) {
+        mappedData.additional = data.rationales;
       }
     }
     
@@ -177,6 +196,58 @@ const FormEditor = () => {
   const handleFormDataChange = (newFormData, formType) => {
     updateFormData(formType, newFormData);
   };
+  
+  // Apply measurable goals to form fields
+  const applyMeasurableGoals = () => {
+    // First, determine the correct goals array to use
+    let goalsArray = [];
+    
+    // Check if measurableGoals is an object with a 'goals' property
+    if (measurableGoals && typeof measurableGoals === 'object') {
+      if (Array.isArray(measurableGoals)) {
+        // It's already an array
+        goalsArray = measurableGoals;
+      } else if (measurableGoals.goals && Array.isArray(measurableGoals.goals)) {
+        // It's an object with a 'goals' array
+        goalsArray = measurableGoals.goals;
+      }
+    }
+    
+    // Check if we have goals to work with
+    if (!goalsArray || goalsArray.length === 0) {
+      toast.warning("No measurable goals available to apply");
+      return;
+    }
+    
+    // Format goals for the form
+    let formattedGoals = goalsArray.map((goal, index) => {
+      return `GOAL ${index + 1}: ${goal.objective}\n` +
+             `Measurement: ${goal.measurement}\n` +
+             `Timeframe: ${goal.timeframe}\n`;
+    }).join("\n\n");
+    
+    if (activeForm === 'ibhs') {
+      // Apply to IBHS form
+      setEditedFormData(prev => ({
+        ...prev,
+        ibhs: {
+          ...prev.ibhs,
+          measurable_goals: formattedGoals
+        }
+      }));
+      toast.success("Applied measurable goals to IBHS form");
+    } else {
+      // Apply to Community Care form
+      setEditedFormData(prev => ({
+        ...prev,
+        communityCare: {
+          ...prev.communityCare,
+          treatment_recommendations: formattedGoals
+        }
+      }));
+      toast.success("Applied measurable goals to Community Care form");
+    }
+  }
   
   // Save current form
   const saveForm = async () => {
@@ -375,32 +446,41 @@ const FormEditor = () => {
           </button>
         </div>
       </div>
+    
       
-      {/* Patient Summary */}
-      {patientData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h2 className="text-lg font-semibold text-blue-800 mb-2">Patient Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium">{patientData.name || 'Not specified'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Date of Birth</p>
-              <p className="font-medium">{patientData.dob || 'Not specified'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Age</p>
-              <p className="font-medium">{patientData.age || 'Not specified'}</p>
-            </div>
+      {/* Measurable Goals Section */}
+      {measurableGoals && measurableGoals.length > 0 && (
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-semibold text-blue-800">VineAI-Generated Measurable Goals</h2>
+            <button 
+              onClick={() => setShowMeasurableGoals(!showMeasurableGoals)}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              {showMeasurableGoals ? 'Hide Goals' : 'Show Goals'}
+            </button>
           </div>
+          
+          {showMeasurableGoals && (
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <MeasurableGoals goals={measurableGoals} />
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={applyMeasurableGoals}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Apply to Current Form
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       
       {/* Form Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="flex space-x-8">
-          <button
+          {/* <button
             onClick={() => handleTabChange('ibhs')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeForm === 'ibhs'
@@ -409,7 +489,7 @@ const FormEditor = () => {
             }`}
           >
             WRITTEN ORDER FOR IBHS
-          </button>
+          </button> */}
           <button
             onClick={() => handleTabChange('communityCare')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -418,7 +498,7 @@ const FormEditor = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            COMMUNITY CARE IBHS Form
+            IBHS Form
           </button>
         </nav>
       </div>
